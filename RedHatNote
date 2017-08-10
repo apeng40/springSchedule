@@ -1,6 +1,8 @@
 KickStart:自动安装或者批量安装
 
 Shell:
+
+1.basic command
     ls / 
       ls -la  show all file and detail about read and write
       ls -d   show directory info
@@ -71,3 +73,30 @@ Shell:
       ...
       
     clear
+    
+2.upgrade command
+    history n /  see the lasted n history command
+    
+    alias /     tp see all the alias command define by user
+      alias pd='vi /etc/passwd'   then use pd can edit the file
+      
+    * / match all the case
+      ls f*   list all the file start with f no matter how long
+      
+    ? / match the current word with any character
+      ls f?   list all the file start with f and end with anything but length is 2
+      
+    [...] / match one or more in the []
+      ls [a-c]*   list all file start with any character between a-c
+      ls [acd]*   list all file start with any character in "acd"
+      
+    > and >>
+      cat file1 file >new file  join file1 and file2 to new file
+      cat >>file  add external infor to file in the end
+      
+    | /command result tranport
+      cat file| grep "file"|wc -l   1.get file content 
+                                    2.transfer the file content to grep conmand and search all the line include "file"
+                                    3.count line number of all lines include "file"
+            
+3.regular expression
