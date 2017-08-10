@@ -1,0 +1,73 @@
+KickStart:自动安装或者批量安装
+
+Shell:
+    ls / 
+      ls -la  show all file and detail about read and write
+      ls -d   show directory info
+      ls -t   order by time
+      ls -R   recursion see all the file in all folder
+    
+    mkdir  /
+      mkdir -p  multiple hirchy folder 
+      mkdir -m  meanwhile set access limit
+    
+    rmdir /
+      rmdir -p  recursion delete folder 
+      
+    cd /
+      cd ..
+      cd -
+      
+    pwd / show current absolute path
+    
+    cat /
+      cat >file   create file
+      cat file  view file
+      
+    more /
+      see big file in separated screen
+        
+    less /
+      see file in separated screen like more
+        
+    head /
+      head -n file  see the first n line of the file
+        
+    tail /
+      tail +n file  see the file from the n line 
+      tail -n file  see the file from n line to the end of the file
+      
+    grep / search something in the directory
+      grep -c "something" file  just see the line count
+      grep -i "something"   case insensitive
+      grep -h "something"   don't show the file name while search in multiple files
+      
+    find / find something in directory
+      find / -name "something"  find name is something file
+      find / -group "something"
+      find / -user "something"  find file create by some user
+      
+    wc / count file
+      wc -c file  count byte number
+      wc -l file  count line number
+      wc -w file  count word number
+      
+    cp / copy file
+      cp -b   backup the same name file before 
+      cp -f   overwrite the same name file
+      -r  recursion
+      
+    mv / move file
+      mv -b
+      mv -f
+    
+    rm / remove file or directory
+      rm -f   force delete 
+      rm -r   recursion delete
+      
+    man / help information
+      man mkdir
+      man rm
+      ...
+      
+    clear
