@@ -1,0 +1,20 @@
+Framework:
+    Express
+    
+Technology:
+    1.Middleware
+    
+Common Package:
+    1.sequelize
+    2.async
+    3.lodash
+    4.underscore
+    
+Front-end Tech:
+    1.jquery
+    2.angular
+    3.bootstrap
+    4.hignchart
+    5.D3
+    6.html5
+    7.css3
