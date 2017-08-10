@@ -1,0 +1,22 @@
+
+development:
+    1.Framework:Spring, SpringMVC, Hibernate
+    2.Design Pattern
+    3.Business Logic and data separate.
+    4.Java Multiple Thread.
+    5.Quartz, SpringTask
+    6.Java Core
+
+Management:    
+    1.Package Management:Maven, Ivy
+    2.Code Management:Perforce, SVN, Git
+
+deployment:
+    1.Linux
+    2.Shell
+    
+Testing:
+    1.Jekins
+    
+    
+    
