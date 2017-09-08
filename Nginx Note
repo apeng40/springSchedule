@@ -1,0 +1,287 @@
+1.reverse proxy:
+ 
+ 情景
+由于公司内网有多台服务器的http服务要映射到公司外网静态IP，如果用路由的端口映射来做，就只能一台内网服务器的80端口映射到外网80端口，其他服务器的80端口只能映射到外网的非80端口。非80端口的映射在访问的时候要域名加上端口，比较麻烦。并且公司入口路由最多只能做20个端口映射。肯定以后不够用。
+然后k兄就提议可以在内网搭建个nginx反向代理服务器，将nginx反向代理服务器的80映射到外网IP的80，这样指向到公司外网IP的域名的HTTP请求就会发送到nginx反向代理服务器，利用nginx反向代理将不同域名的请求转发给内网不同机器的端口，就起到了“根据域名自动转发到相应服务器的特定端口”的效果，而路由器的端口映射做到的只是“根据不同端口自动转发到相应服务器的特定端口”，真是喜大普奔啊。
+涉及的知识：nginx编译安装，nginx反向代理基本配置，路由端口映射知识，还有网络域名等常识。
+本次实验目标是做到：在浏览器中输入xxx123.tk能访问到内网机器192.168.10.38的3000端口，输入xxx456.tk能访问到内网机器192.168.10.40的80端口。
+配置步骤
+
+服务器ubuntu 12.04
+###更新仓库
+
+apt-get update -y
+apt-get install wget -y
+1
+2
+apt-get update -y
+apt-get install wget -y
+#下载nginx和相关软件包
+pcre是为了编译rewrite模块，zlib是为了支持gzip功能。额，这里nginx版本有点旧，因为我还要做升级nginx的实验用。大家可以装新版本。
+
+cd /usr/local/src
+ wget <a href="ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.33.tar.gz">ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.33.tar.gz</a>
+ wget <a href="http://zlib.net/zlib-1.2.8.tar.gz">http://zlib.net/zlib-1.2.8.tar.gz</a>
+ wget <a href="http://nginx.org/download/nginx-1.4.2.tar.gz">http://nginx.org/download/nginx-1.4.2.tar.gz</a>
+ tar xf pcre-8.33.tar.gz
+ tar xf zlib-1.2.8.tar.gz
+1
+2
+3
+4
+5
+6
+cd /usr/local/src
+ wget <a href="ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.33.tar.gz">ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.33.tar.gz</a>
+ wget <a href="http://zlib.net/zlib-1.2.8.tar.gz">http://zlib.net/zlib-1.2.8.tar.gz</a>
+ wget <a href="http://nginx.org/download/nginx-1.4.2.tar.gz">http://nginx.org/download/nginx-1.4.2.tar.gz</a>
+ tar xf pcre-8.33.tar.gz
+ tar xf zlib-1.2.8.tar.gz
+#安装编译环境
+
+ apt-get install build-essential libtool -y
+1
+ apt-get install build-essential libtool -y
+#创建nginx用户
+所谓的unprivileged user
+
+useradd -s /bin/false -r -M -d /nonexistent www
+1
+useradd -s /bin/false -r -M -d /nonexistent www
+#开始编译安装
+
+/configure --with-pcre=/usr/local/src/pcre-8.33 --with-zlib=/usr/local/src/zlib-1.2.8 --user=www --group=www \
+ --with-http_stub_status_module --with-http_ssl_module --with-http_realip_module
+ make
+ make install
+1
+2
+3
+4
+/configure --with-pcre=/usr/local/src/pcre-8.33 --with-zlib=/usr/local/src/zlib-1.2.8 --user=www --group=www \
+ --with-http_stub_status_module --with-http_ssl_module --with-http_realip_module
+ make
+ make install
+#给文件夹授权
+
+chown -R www:www /usr/local/nginx
+1
+chown -R www:www /usr/local/nginx
+#修改配置文件
+vim nginx.conf
+
+user www www;
+worker_processes 1;
+error_log logs/error.log;
+pid logs/nginx.pid;
+worker_rlimit_nofile 65535;
+events {
+    use epoll;
+    worker_connections 65535;
+}
+http {
+    include mime.types;
+    default_type application/octet-stream;
+    include /usr/local/nginx/conf/reverse-proxy.conf;
+    sendfile on;
+    keepalive_timeout 65;
+    gzip on;
+    client_max_body_size 50m; #缓冲区代理缓冲用户端请求的最大字节数,可以理解为保存到本地再传给用户
+    client_body_buffer_size 256k;
+    client_header_timeout 3m;
+    client_body_timeout 3m;
+    send_timeout 3m;
+    proxy_connect_timeout 300s; #nginx跟后端服务器连接超时时间(代理连接超时)
+    proxy_read_timeout 300s; #连接成功后，后端服务器响应时间(代理接收超时)
+    proxy_send_timeout 300s;
+    proxy_buffer_size 64k; #设置代理服务器（nginx）保存用户头信息的缓冲区大小
+    proxy_buffers 4 32k; #proxy_buffers缓冲区，网页平均在32k以下的话，这样设置
+    proxy_busy_buffers_size 64k; #高负荷下缓冲大小（proxy_buffers*2）
+    proxy_temp_file_write_size 64k; #设定缓存文件夹大小，大于这个值，将从upstream服务器传递请求，而不缓冲到磁盘
+    proxy_ignore_client_abort on; #不允许代理端主动关闭连接
+    server {
+        listen 80;
+        server_name localhost;
+        location / {
+            root html;
+            index index.html index.htm;
+        }
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root html;
+        }
+    }
+}
+
+user www www;
+worker_processes 1;
+error_log logs/error.log;
+pid logs/nginx.pid;
+worker_rlimit_nofile 65535;
+events {
+    use epoll;
+    worker_connections 65535;
+}
+http {
+    include mime.types;
+    default_type application/octet-stream;
+    include /usr/local/nginx/conf/reverse-proxy.conf;
+    sendfile on;
+    keepalive_timeout 65;
+    gzip on;
+    client_max_body_size 50m; #缓冲区代理缓冲用户端请求的最大字节数,可以理解为保存到本地再传给用户
+    client_body_buffer_size 256k;
+    client_header_timeout 3m;
+    client_body_timeout 3m;
+    send_timeout 3m;
+    proxy_connect_timeout 300s; #nginx跟后端服务器连接超时时间(代理连接超时)
+    proxy_read_timeout 300s; #连接成功后，后端服务器响应时间(代理接收超时)
+    proxy_send_timeout 300s;
+    proxy_buffer_size 64k; #设置代理服务器（nginx）保存用户头信息的缓冲区大小
+    proxy_buffers 4 32k; #proxy_buffers缓冲区，网页平均在32k以下的话，这样设置
+    proxy_busy_buffers_size 64k; #高负荷下缓冲大小（proxy_buffers*2）
+    proxy_temp_file_write_size 64k; #设定缓存文件夹大小，大于这个值，将从upstream服务器传递请求，而不缓冲到磁盘
+    proxy_ignore_client_abort on; #不允许代理端主动关闭连接
+    server {
+        listen 80;
+        server_name localhost;
+        location / {
+            root html;
+            index index.html index.htm;
+        }
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root html;
+        }
+    }
+}
+编辑反向代理服务器配置文件：
+vim /usr/local/nginx/conf/reverse-proxy.conf
+
+server
+{
+    listen 80;
+    server_name xxx123.tk;
+    location / {
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://192.168.10.38:3000;
+    }
+    access_log logs/xxx123.tk_access.log;
+}
+
+server
+{
+    listen 80;
+    server_name xxx456.tk;
+    location / {
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://192.168.10.40:80;
+    }
+    access_log logs/xxx456.tk_access.log;
+}
+
+server
+{
+    listen 80;
+    server_name xxx123.tk;
+    location / {
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://192.168.10.38:3000;
+    }
+    access_log logs/xxx123.tk_access.log;
+}
+ 
+server
+{
+    listen 80;
+    server_name xxx456.tk;
+    location / {
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass http://192.168.10.40:80;
+    }
+    access_log logs/xxx456.tk_access.log;
+}
+然后重新加载nginx配置文件，使之修改生效，再把xxx123.tk域名指向公司静态IP，这样就成功的做到了在浏览器中输入xxx123.tk的时候访问的内网服务器192.168.10.38的3000端口,输入xxx456.tk访问192.168.10.40的80端口的作用。
+如果想对后端机器做负载均衡，像下面这配置就可以把对nagios.xxx123.tk的请求分发给内网的131和132这两台机器做负载均衡了。
+
+upstream monitor_server {
+    server 192.168.0.131:80;
+        server 192.168.0.132:80;
+}
+
+server
+{
+    listen 80;
+    server_name nagios.xxx123.tk;
+    location / {
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; 
+        proxy_pass http://monitor_server;
+    }
+    access_log logs/nagios.xxx123.tk_access.log;
+}
+
+upstream monitor_server {
+    server 192.168.0.131:80;
+        server 192.168.0.132:80;
+}
+ 
+server
+{
+    listen 80;
+    server_name nagios.xxx123.tk;
+    location / {
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; 
+        proxy_pass http://monitor_server;
+    }
+    access_log logs/nagios.xxx123.tk_access.log;
+}
+额，关于负载均衡和缓存就不多说了，这里只是要起到一个简单的“域名转发”功能。
+另外，由于http请求最后都是由反向代理服务器传递给后段的机器，所以后端的机器原来的访问日志记录的访问IP都是反向代理服务器的IP。
+要想能记录真实IP，需要修改后端机器的日志格式，这里假设后端也是一台nginx：
+在后端配置文件里面加入这一段即可：
+
+log_format access '$HTTP_X_REAL_IP - $remote_user [$time_local] "$request" '
+'$status $body_bytes_sent "$http_referer" '
+'"$http_user_agent" $HTTP_X_Forwarded_For';
+
+access_log logs/access.log access;
+
+log_format access '$HTTP_X_REAL_IP - $remote_user [$time_local] "$request" '
+'$status $body_bytes_sent "$http_referer" '
+'"$http_user_agent" $HTTP_X_Forwarded_For';
+ 
+access_log logs/access.log access;
+再看看原来日志的格式长什么样：
+
+#log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+# '$status $body_bytes_sent "$http_referer" '
+# '"$http_user_agent" "$http_x_forwarded_for"';
+
+#access_log logs/access.log main;
+
+#log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+# '$status $body_bytes_sent "$http_referer" '
+# '"$http_user_agent" "$http_x_forwarded_for"';
+ 
+#access_log logs/access.log main;
+看出区别了吧
+
+2.load balance
