@@ -1,0 +1,118 @@
+1.git config:
+  (system, global) git config -l
+  git config user.name "huipeng"
+  git config alias.con "config -l"
+  git config --unset alias.con
+  
+2.git diff:
+  core.editor setting(default is vi, can set to notepad...)
+  git diff tool setting(most popular: kdiff3)
+  
+3.git track type
+  {traked, ignored, untracked}
+  git ignore file: touch .gitignore
+  
+4.git status
+
+5.git commit control
+  git add             -------add file to index
+  git commit          -------add  git index to repository
+  
+  withdraw:
+  git add but not commit    ------git rm --cached file(put file back from git index)
+  git add and commit        ------git reset head file(set the file to the head version)
+  
+6.git add
+  git add .
+  git add -u
+  git add -A
+  
+7.git tag label in commit node
+  git tag "balabala" (commit node 1)
+  
+8.git checkout
+  git checkout (commit node) file
+  git checkout will set the commit node as the index head, if you do not want to set this as the latest node, after checkout, you need to execute "git reset head" to clean the git index
+
+9.git grep "something" (commit node)
+  git grep -e "a" -e "b" conmit node      --------------------e means or
+  git grep -e 'a' --and -e 'b' commit node
+  
+10.git stash save
+  save stash file:
+  git stash save 
+  git stash list to see the stash save list and commit node
+  
+  get stash file:
+  git checkout commit node
+  git stash pop /apply
+  
+11.git gc
+
+12.git log
+  git log (time setting before and after, by author...)
+  git log --oneline(simplify the log)
+  
+  what's more. can add plug in "GitStats" to see the graph
+  
+13.git branch
+  git checkout -b "branch name" commit node
+  git checkout "branch name"
+  
+  git log --graph --oneline --all --decorate            --------------------------see all the commit node and also where the head is
+  gitk
+  
+14.detached node control
+  1.delete
+  2.merge to the master branch and delete
+  
+15.git delete branch
+  git branch -d "branch name" --------just delete the branch which is merge to the master branch
+  git branch -D "branch name" --------force to delete the branch
+  
+16.git merge
+  git checkout master
+  git merge "branch name"
+  
+  if want to withdraw the merge action:
+  git reset --hard head^      ----------set back to the previous node(--hard is to restore the file in the local folder)
+  
+  fast-forward merge and 3-way merge:
+  git merge --no-ff "branch name"
+  
+17.manually solve conflict
+  use git merge tool
+  
+18.git cherry-pick           ----------------merge with the previous commit node
+  git cherry-pick commit node
+  
+19.git rebase                -----------------to aviod a lot of net structure after a lot of merge
+  git checkout draft
+  git rebase master
+  --then the previous draft commit node will disappare and connect to the latest master commit node which is used to merge with draft branch
+  
+  withdraw rebase action:
+  git reflog branch name          -------to see the all the operation in the branch and get node before the rebase then reset node
+  git reset --hard commit node
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
