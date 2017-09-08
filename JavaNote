@@ -14,6 +14,7 @@ Management:
 deployment:
     1.Linux
     2.Shell
+    3.nginx
     
 Testing:
     1.Jekins
