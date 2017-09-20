@@ -1,4 +1,5 @@
 CXF soap service
 SpringBoot
-MQ
 soap ui and xml wsdl
+HDOM
+JMS MQ
